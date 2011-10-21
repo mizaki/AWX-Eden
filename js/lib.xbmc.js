@@ -231,7 +231,6 @@ var xbmc = {};
 
 		detectThumbTypes: function(initContainer, callback) {
 			xbmc.sendCommand(
-				//'{"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShows", "id": 1}',
 				'{"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShows", "params": {"properties" : ["thumbnail"]}, "id": 1}',
 
 				function (response) {
@@ -281,7 +280,6 @@ var xbmc = {};
 			$.extend(settings, options);
 
 			xbmc.sendCommand(
-				//'{"jsonrpc": "2.0", "method": "XBMC.SetVolume", "params": ' + settings.volume + ', "id": 1}',
 				'{"jsonrpc": "2.0", "method": "Application.SetVolume", "params": { "volume": ' + settings.volume + '}, "id": 1}',
 				settings.onSuccess,
 				settings.onError
@@ -325,36 +323,20 @@ var xbmc = {};
 			};
 			$.extend(settings, options);
 
-			var commands = {play: 'PlayPause', stop: 'Stop', prev: 'GoPrevious', next: 'GoNext', shuffle: 'Shuffle', unshuffle: 'UnShuffle'};
+			var commands = {play: 'PlayPause', stop: 'Stop', prev: 'GoPrevious', next: 'GoNext', shuffle: 'Shuffle', unshuffle: 'Unshuffle'};
 
 			if (commands[settings.type]) {
 				xbmc.sendCommand(
 					'{"jsonrpc": "2.0", "method": "Player.GetActivePlayers", "id": 1}',
 
 					function (response) {
-						if (response.result[0]) {
-							//var playerResult = response.result[0].type;
-							//var currentPlayer = '';
-							var playeridis = response.result[0].playerid;
-	
-							//if (playerResult == "audio") 		currentPlayer = 'Audio';
-							//else if (playerResult == "video")	currentPlayer = 'Video';
-							//else if (playerResult == "picture")	currentPlayer = 'Picture';
-							
-							//if (playerResult.audio) 		playeridis = 0;
-							//else if (playerResult.video)	playeridis = 1;
-							//else if (playerResult.picture)	playeridis = 2;
-	
-							//if (currentPlayer != '') {
-							//var tmp = (settings.type=='shuffle' || settings.type=='unshuffle'?
-							//				'Playlist': 'Player');
+
+						if (response.result[0].type != '') {
 							xbmc.sendCommand(
-								//'{"jsonrpc": "2.0", "method": "' + currentPlayer + tmp + '.' + commands[settings.type] + '", "id": 1}',
-								'{"jsonrpc": "2.0", "method": "Player.' + commands[settings.type] + '", "params": { "playerid": ' + playeridis + ' }, "id": 1}',
+								'{"jsonrpc": "2.0", "method": "Player.' + commands[settings.type] + '", "params": { "playerid": ' + response.result[0].playerid + ' }, "id": 1}',
 								settings.onSuccess,
 								settings.onError
 							);
-							//}
 						}
 					},
 					settings.onError
@@ -499,7 +481,6 @@ var xbmc = {};
 			$.extend(settings, options);
 
 			xbmc.sendCommand(
-				//'{"jsonrpc": "2.0", "method": "Playlist.Add", "params": { "item": {"file": "' + settings.file.replace(/\\/g, "\\\\") + '"} }, "id": 1}',
 				'{"jsonrpc": "2.0", "method": "Playlist.Add", "params": { "item": {"file": "' + settings.file.replace(/\\/g, "\\\\") + '"}, "playlistid": 0 }, "id": 1}',
 				settings.onSuccess,
 				settings.onError,
@@ -554,8 +535,7 @@ var xbmc = {};
 			});
 		},
 
-
-
+		
 		addAlbumToPlaylist: function(options) {
 			var settings = {
 				albumid: 0,
@@ -564,55 +544,24 @@ var xbmc = {};
 			};
 			$.extend(settings, options);
 
-			// Comparator to sort albums by tracknumber ASC
-			var songComparator = function(a, b) {
-				return a.tracknumber - b.tracknumber;
-			};
-
 			xbmc.sendCommand(
-				'{"jsonrpc": "2.0", "method": "AudioLibrary.GetSongs", "params": {"albumid": ' + settings.albumid + ', "properties": ["track"]}, "id": 1}',
-
+				'{"jsonrpc": "2.0", "method": "Playlist.Add", "params": {"item": {"albumid": ' + settings.albumid + '}, "playlistid": 0}, "id": 1}',
+				
 				function(response) {
-					if (!response.result || !response.result.songs) {
-						settings.onError(mkf.lang.get('message_album_not_found'));
-						return;
-					}
-
-					var songs = response.result.songs;
-					songs.sort(songComparator); // sort by tracknumber ASC
-					var errors = 0;
-
-					// add each song of the album to the playlist
-					$.each(songs, function(i, song)  {
-						// add Song to playlist ... max. 2 retries if add failed
-						xbmc.addSongToPlaylist({songid: song.songid, async: false, onError: function() {
-							xbmc.addSongToPlaylist({songid: song.songid, async: false, onError: function() {
-								xbmc.addSongToPlaylist({songid: song.songid, async: false, onError: function() {
-									errors += 1;
-								}});
-							}});
-						}});
-					});
-
-					if (errors != 0) {
-						settings.onError(mkf.lang.get('message_failed_add_songs_to_playlist', [errors]));
-					} else {
-						settings.onSuccess();
-					}
+					settings.onSuccess()
 				},
-
+				
 				function(response) {
 					settings.onError(mkf.lang.get('message_failed_albums_songs'));
 				}
-			);
+			);			
 		},
-
 
 
 		clearAudioPlaylist: function(options) {
 			var settings = {
 				onSuccess: null,
-				onError: null
+				onError: null,
 			};
 			$.extend(settings, options);
 
@@ -629,12 +578,11 @@ var xbmc = {};
 			var settings = {
 				item: 0,
 				onSuccess: null,
-				onError: null
+				onError: null,
 			};
 			$.extend(settings, options);
 
 			xbmc.sendCommand(
-				// '{"jsonrpc": "2.0", "method": "Player.Open", "params": {"item": ' + settings.item + '}, "id": 1}',
 				'{"jsonrpc": "2.0", "method": "Player.Open", "params" : { "item" : { "playlistid" : 0, "position": ' + settings.item + ' } }, "id": 1}',
 				settings.onSuccess,
 				function(response) {
@@ -652,7 +600,6 @@ var xbmc = {};
 			$.extend(settings, options);
 
 			xbmc.sendCommand(
-				// '{"jsonrpc": "2.0", "method": "Player.Open", "params": {"item": ' + settings.item + '}, "id": 1}',
 				'{"jsonrpc": "2.0", "method": "Playlist.Remove", "params" : { "playlistid" : 0, "position": ' + settings.item + ' }, "id": 1}',
 				settings.onSuccess,
 				function(response) {
@@ -670,7 +617,6 @@ var xbmc = {};
 			$.extend(settings, options);
 
 			xbmc.sendCommand(
-				// '{"jsonrpc": "2.0", "method": "Player.Open", "params": {"item": ' + settings.item + '}, "id": 1}',
 				'{"jsonrpc": "2.0", "method": "Playlist.Remove", "params" : { "playlistid" : 1, "position" : ' + settings.item + ' }, "id": 1}',
 				settings.onSuccess,
 				function(response) {
@@ -890,7 +836,6 @@ var xbmc = {};
 			$.extend(settings, options);
 
 			xbmc.sendCommand(
-				// '{"jsonrpc": "2.0", "method": "Player.Open", "params": {"item": ' + settings.item + '}, "id": 1}',
 				'{"jsonrpc": "2.0", "method": "Player.Open", "params" : { "item" : { "playlistid" : 1, "position": ' + settings.item + ' } }, "id": 1}',
 				settings.onSuccess,
 				function(response) {
@@ -976,15 +921,8 @@ var xbmc = {};
 				onError: null
 			};
 			$.extend(settings, options);
-		/*
-			function myobject(){
-			this.movieid = 0;
-			}
-			var args = new myobject();
-			args.movieid = settings.movieid;
-		*/
+
 			xbmc.sendCommand(
-				//'{"jsonrpc": "2.0", "method": "VideoPlaylist.Add", "params": {"movieid": ' + settings.movieid + '}, "id": 1}',
 				'{"jsonrpc": "2.0", "method": "Playlist.Add", "params": {"item": {"movieid": ' + settings.movieid + '}, "playlistid": 1}, "id": 1}',
 				settings.onSuccess,
 				settings.onError,
@@ -1107,7 +1045,7 @@ var xbmc = {};
 			var settings = {
 				movieid: 0,
 				onSuccess: null,
-				onError: null
+				onError: null,
 			};
 			$.extend(settings, options);
 
@@ -1145,8 +1083,7 @@ var xbmc = {};
 			$.extend(settings, options);
 
 			xbmc.sendCommand(
-				//'{"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": { "start": 0, "properties" : ["genre", "director", "plot", "title", "originaltitle", "runtime", "year", "rating"], "sort": { "order": "ascending", "method": "label" } }, "id": 1}',
-				'{"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": {"properties" : ["genre", "director", "plot", "title", "originaltitle", "runtime", "year", "rating", "thumbnail"], "sort": { "order": "ascending", "method": "label" } }, "id": 1}',
+				'{"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": {"properties" : ["genre", "director", "plot", "title", "originaltitle", "runtime", "year", "rating", "thumbnail", "playcount"], "sort": { "order": "ascending", "method": "label" } }, "id": 1}',
 				function(response) {
 					settings.onSuccess(response.result);
 				},
@@ -1165,7 +1102,6 @@ var xbmc = {};
 			$.extend(settings, options);
 
 			xbmc.sendCommand(
-				//'{"jsonrpc": "2.0", "method": "VideoPlaylist.Add", "params": {"episodeid": ' + settings.episodeid + '}, "id": 1}',
 				'{"jsonrpc": "2.0", "method": "Playlist.Add", "params": {"item": {"episodeid": ' + settings.episodeid + '}, "playlistid": 1}, "id": 1}',
 				settings.onSuccess,
 				settings.onError,
@@ -1220,8 +1156,7 @@ var xbmc = {};
 			$.extend(settings, options);
 
 			xbmc.sendCommand(
-				//'{"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShows", "params": { "start": 0, "properties": ["genre", "director", "plot", "title", "originaltitle", "runtime", "year", "rating"] }, "id": 1}',
-				'{"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShows", "params": { "properties": ["genre", "plot", "title", "originaltitle", "year", "rating", "thumbnail"] }, "id": 1}',
+				'{"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShows", "params": { "properties": ["genre", "plot", "title", "originaltitle", "year", "rating", "thumbnail", "playcount"] }, "id": 1}',
 				function(response) {
 					settings.onSuccess(response.result);
 				},
@@ -1240,7 +1175,7 @@ var xbmc = {};
 			$.extend(settings, options);
 
 			xbmc.sendCommand(
-				'{"jsonrpc": "2.0", "method": "VideoLibrary.GetSeasons", "params": { "tvshowid": ' + settings.tvshowid + ', "properties": ["season"]}, "id": 1}',
+				'{"jsonrpc": "2.0", "method": "VideoLibrary.GetSeasons", "params": { "tvshowid": ' + settings.tvshowid + ', "properties": ["season", "playcount"]}, "id": 1}',
 				function(response) {
 					settings.onSuccess(response.result);
 				},
@@ -1260,7 +1195,7 @@ var xbmc = {};
 			$.extend(settings, options);
 
 			xbmc.sendCommand(
-				'{"jsonrpc": "2.0", "method": "VideoLibrary.GetEpisodes", "params": { "tvshowid": ' + settings.tvshowid + ', "season" : ' + settings.season + ', "properties": ["episode"], "sort": { "order": "ascending", "method": "episode" } }, "id": 1}',
+				'{"jsonrpc": "2.0", "method": "VideoLibrary.GetEpisodes", "params": { "tvshowid": ' + settings.tvshowid + ', "season" : ' + settings.season + ', "properties": ["episode", "playcount"], "sort": { "order": "ascending", "method": "episode" } }, "id": 1}',
 				function(response) {
 					settings.onSuccess(response.result);
 				},

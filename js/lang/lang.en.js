@@ -74,6 +74,8 @@ mkf.lang.add({language: 'English', short: 'en', author: 'MKay', values: {
 	'messsage_add_song_to_playlist': 	'Adding song to playlist ... ',
 	'message_currently_not_supported':	'This is currently not supported by the XBMC-API.',
 	'message_playing_item': 			'Playing item ... ',
+	'message_removing_item': 			'Removing item ... ',
+	'message_failed_remove': 			'Failed to remove playlist item... ',
 	'message_playing_movie': 			'Playing movie ... ',
 	'messsage_add_movie_to_playlist':	'Adding movie to playlist ... ',
 	'message_playing_episode': 			'Playing episode ... ',
