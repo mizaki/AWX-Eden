@@ -103,6 +103,9 @@
 				$shuffleBtn.removeClass('unshuffle');
 				$shuffleBtn.attr('title', 'Shuffle');
 			}
+			//No idea if we're in Audio or Video playlist; refresh both..
+			awxUI.onMusicPlaylistShow();
+			awxUI.onVideoPlaylistShow();
 		});
 
 		this.each (function() {
@@ -342,7 +345,7 @@
 			});
 
 			return false;
-		} // END onArtistClick
+		}; // END onArtistClick
 
 
 		// no artists?
@@ -445,7 +448,7 @@
 			});
 
 			return false;
-		} // END onSonglistClick
+		}; // END onSonglistClick
 
 
 		var useLazyLoad = mkf.cookieSettings.get('lazyload', 'no')=='yes'? true : false;
@@ -561,8 +564,31 @@
 		}
 
 		var onItemRemoveClick = function(event) {
-			alert(mkf.lang.get('message_currently_not_supported'));
+			//alert(mkf.lang.get('message_currently_not_supported'));
 			// TODO implement for new JSON-API
+			
+			var messageHandle = mkf.messageLog.show(mkf.lang.get('message_removing_item'));
+			var fn;
+			
+			if (playlist == 'Audio') {
+				fn = xbmc.removeAudioPlaylistItem;
+			} else {
+				fn = xbmc.removeVideoPlaylistItem;
+			}
+			
+			fn({
+				item: event.data.itemNum,
+				onSuccess: function() {
+					mkf.messageLog.appendTextAndHide(messageHandle, mkf.lang.get('message_ok'), 2000, mkf.messageLog.status.success);
+					awxUI.onMusicPlaylistShow();
+					awxUI.onVideoPlaylistShow();
+				},
+				onError: function(errorText) {
+					mkf.messageLog.appendTextAndHide(messageHandle, errorText, 8000, mkf.messageLog.status.error);
+				}
+			});
+
+			
 			return false;
 		};
 
@@ -796,7 +822,7 @@
 				year: NA,
 				director: NA,
 				file: NA,
-				plot: NA,
+				plot: NA
 			};
 			$.extend(tvshow, event.data.tvshow);
 			var dialogContent = '';
@@ -999,9 +1025,8 @@
 
 		var onFilePlayClick = function(event) {
 			var isFolder = false;
-		
-			//if (event.data.isFolder)
-			if (event.data.file.isFolder)
+
+			if (event.data.isFolder)
 				isFolder = true;
 
 			if (isFolder) {
@@ -1046,8 +1071,7 @@
 		var onAddFileToPlaylistClick = function(event) {
 			var isFolder = false;
 
-			//if (event.data.isFolder)
-			if (event.data.file.isFolder)
+			if (event.data.isFolder)
 				isFolder = true;
 
 			if (isFolder) {
@@ -1131,12 +1155,13 @@
 					directory: folder,
 
 					onSuccess: function(result) {
-						var folders = result.directories;
+						//var folders = result.directories;
+						var folders = result.files;
 						var files = result.files;
 
 						if (folders) {
 							$.each(folders, function(i, folder)  {
-								if (!folder.file.startsWith('addons://')) {
+								if (!folder.file.startsWith('addons://') && folder.filetype == "directory") {
 									var $folder = $('<li' + (globalI%2==0? ' class="even"': '') + '>' + 
 										'<div class="folderLinkWrapper folder' + i + '">' + 
 										'<a href="" class="button playlist" title="' + mkf.lang.get('btn_enqueue') + '"><span class="miniIcon enqueue" /></a>' + 
@@ -1153,7 +1178,7 @@
 
 						if (files) {
 							$.each(files, function(i, file)  {
-								if (!file.file.startsWith('addons://')) {
+								if (!file.file.startsWith('addons://') && file.filetype == "file") {
 									var $file = $('<li' + (globalI%2==0? ' class="even"': '') + '><div class="folderLinkWrapper file' + i + '"> <a href="" class="button playlist" title="' + mkf.lang.get('btn_enqueue') + '"><span class="miniIcon enqueue" /></a> <a href="" class="file play">' + file.label + '</a></div></li>').appendTo($filelist);
 									$file.find('.play').bind('click', {file: file.file}, onFilePlayClick);
 									$file.find('.playlist').bind('click', {file: file.file}, onAddFileToPlaylistClick);
@@ -1176,10 +1201,10 @@
 				xbmc.getSources({
 					'media': media,
 					onSuccess: function(result) {
-						if (!result.shares) {
+						if (!result.sources) {
 							return;
 						}
-						$.each(result.shares, function(i, share)  {
+						$.each(result.sources, function(i, share)  {
 							if (!share.file.startsWith('addons://')) {
 								var $file = $('<li' + (globalI%2==0? ' class="even"': '') + '><a href="" class="file' + i + '"> [SRC] ' + share.label + '</a></li>').appendTo($filelist);
 								$file.find('a').bind('click', {folder: {name: '[SRC] ' + share.label, path: share.file}}, onFolderClick);
