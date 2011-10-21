@@ -11,7 +11,7 @@
     point="xbmc.gui.webinterface"/>
   <extension point="xbmc.addon.metadata">
     <summary lang="en">AWX - Ajax based Webinterface for XBMC</summary>
-    <description lang="en">You can use this webinterface to control the Audio/Video-Section of XBMC: play/pause/stop/skip, show artists/albums/movies/tv shows and play them or add them to the playlist. It's designed for use on PCs or laptops with a browser like FireFox which supports JavaScript.
+    <description lang="en">You can use this webinterface to control the Audio/Video Section of XBMC: play/pause/stop/skip, show artists/albums/movies/tv shows and play them or add them to the playlist. It's designed for use on PCs or laptops with a browser like FireFox which supports JavaScript.
 
 Minimum requirements: XBMC (pre) Eden 
 Tested Browsers:
