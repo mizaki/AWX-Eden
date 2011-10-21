@@ -1,4 +1,4 @@
-/*
+/* Mizaki
  *  AWX - Ajax based Webinterface for XBMC
  *  Copyright (C) 2010  MKay
  *
@@ -363,10 +363,10 @@ var xbmc = {};
 					var playerResult = response.result;
 					var player = '';
 
-					if (playerResult.audio) {
+					if (playerResult[0].type == 'audio') {
 						player = 'Audio';
 
-					} else if (playerResult.video) {
+					} else if (playerResult[0].type == 'video') {
 						player = 'Video';
 
 					} else {
@@ -375,7 +375,8 @@ var xbmc = {};
 					}
 
 					xbmc.sendCommand(
-						'{"jsonrpc": "2.0", "method": "' + player + 'Player.SeekPercentage", "params": ' + settings.percentage + ', "id": 1}',
+						//'{"jsonrpc": "2.0", "method": "' + player + 'Player.SeekPercentage", "params": ' + settings.percentage + ', "id": 1}',
+						'{"jsonrpc": "2.0", "method": "Player.Seek", "params": {"value": ' + settings.percentage + ', "playerid": ' + playerResult[0].playerid + '}, "id": 1}',
 
 						settings.onSuccess,
 						settings.onError
@@ -488,6 +489,7 @@ var xbmc = {};
 				settings.async
 			);
 		},
+
 
 
 
@@ -1354,37 +1356,20 @@ var xbmc = {};
 					var activePlayer = '';
 
 					xbmc.sendCommand(
-						'{"jsonrpc": "2.0", "method": "XBMC.GetInfoLabels", "params" : {"labels": ["MusicPlayer.Title", "MusicPlayer.Album", "MusicPlayer.Artist", "Player.Time", "Player.Duration", "Player.Volume", "Playlist.Random", "VideoPlayer.Title", "VideoPlayer.TVShowTitle", "Player.Filenameandpath"]}, "id": 1}',
+						//'{"jsonrpc": "2.0", "method": "XBMC.GetInfoLabels", "params" : {"labels": ["MusicPlayer.Title", "MusicPlayer.Album", "MusicPlayer.Artist", "Player.Time", "Player.Duration", "Player.Volume", "Playlist.Random", "VideoPlayer.Title", "VideoPlayer.TVShowTitle", "Player.Filenameandpath"]}, "id": 1}',
+						'{"jsonrpc": "2.0", "method": "Player.GetActivePlayers", "id": 1}',
 
 						function (response) {
-							var infoResult = response.result;
-
-							shuffle = (infoResult['Playlist.Random']=="Random"? true: false);
-							time = infoResult['Player.Time'];
-							file = infoResult['Player.Filenameandpath'];
-
-							var tmp = parseFloat(infoResult['Player.Volume']);
-							volume = (isNaN(tmp)? 0: (tmp+60)/60*100); // -60 dB to 0 dB (--> 0% to 100%)
-
-							curPlayData.duration = infoResult['Player.Duration'];
-							curPlayData.file = infoResult['Player.Filenameandpath'];
-
-							if (infoResult['MusicPlayer.Title'] != "") {
-								activePlayer = 'audio';
-								curPlayData.title = infoResult['MusicPlayer.Title'];
-								curPlayData.album = infoResult['MusicPlayer.Album'];
-								curPlayData.artist = infoResult['MusicPlayer.Artist'];
-
-							} else if (infoResult['VideoPlayer.Title'] != "") {
-								activePlayer = 'video';
-								curPlayData.title = infoResult['VideoPlayer.Title'];
-								curPlayData.showtitle = infoResult['VideoPlayer.TVShowTitle'];
-
-							} else {
+							var playerActive = response.result;
+							//need to cover slideshow
+							if (playerActive == '') {
 								activePlayer = 'none';
+							} else {
+								activePlayer = playerActive[0].type;
+								activePlayerid = playerActive[0].playerid;
 							}
 						},
-
+						
 						function(response) {
 							activePlayer = 'none'; // ERROR
 						},
@@ -1393,6 +1378,20 @@ var xbmc = {};
 					);
 
 					// has volume changed?
+					xbmc.sendCommand(
+						'{"jsonrpc": "2.0", "method": "Application.GetProperties", "params": { "properties": [ "volume", "muted" ] }, "id": 1}',
+
+						function (response) {
+							var volume = response.result.volume;
+							if (volume != xbmc.periodicUpdater.lastVolume) {
+								$.each(xbmc.periodicUpdater.volumeChangedListener, function(i, listener)  {
+								listener(volume);
+							});
+							}
+						},
+
+						null, false // not async
+					);
 					if (volume != xbmc.periodicUpdater.lastVolume) {
 						$.each(xbmc.periodicUpdater.volumeChangedListener, function(i, listener)  {
 							listener(volume);
@@ -1401,7 +1400,7 @@ var xbmc = {};
 
 					if (activePlayer == 'none' &&
 						this.playerStatus != 'stopped') {
-
+						
 						this.playerStatus = 'stopped';
 						this.firePlayerStatusChanged('stopped');
 					}
@@ -1412,15 +1411,17 @@ var xbmc = {};
 						this.firePlayerStatusChanged(shuffle? 'shuffleOn': 'shuffleOff');
 					}
 
-					// is playing
+					// is playing state
 					if (activePlayer != 'none') {
 						var request = '';
 
 						if (activePlayer == 'audio') {
-							request = '{"jsonrpc": "2.0", "method": "Playlist.GetItems", "params": { "properties": ["title", "album", "artist", "duration"], "playlistid": 0 }, "id": 1}';
+							//request = '{"jsonrpc": "2.0", "method": "Playlist.GetItems", "params": { "properties": ["title", "album", "artist", "duration"], "playlistid": 0 }, "id": 1}';
+							request = '{"jsonrpc":"2.0","id":2,"method":"Player.GetProperties","params":{ "playerid":0,"properties":["speed"] } }'
 
 						} else if (activePlayer == 'video') {
-							request = '{"jsonrpc": "2.0", "method": "Playlist.GetItems", "params": { "properties": ["title", "season", "episode", "duration", "showtitle"], "playlistid": 1 }, "id": 1}';
+							//request = '{"jsonrpc": "2.0", "method": "Playlist.GetItems", "params": { "properties": ["title", "season", "episode", "duration", "showtitle"], "playlistid": 1 }, "id": 1}';
+							request = '{"jsonrpc":"2.0","id":4,"method":"Player.GetProperties","params":{ "playerid":1,"properties":["speed"] } }'
 						}
 
 						xbmc.sendCommand(
@@ -1428,35 +1429,47 @@ var xbmc = {};
 
 							function (response) {
 								var currentPlayer = response.result;
-								var currentItem;
 
-								// playlist may be cleared. Use data retrieved by GetInfoLabels
-								if (!currentPlayer.items || !currentPlayer.items[currentPlayer.current]) {
-									currentItem = curPlayData;
-
-								} else {
-									currentItem = currentPlayer.items[currentPlayer.current];
-									$.extend(currentItem, curPlayData);
-								}
-
-
-								if (!currentPlayer.playing) {
+								if (currentPlayer.speed != 0 && currentPlayer.speed != 1 ) {
 									// not playing
 									if (xbmc.periodicUpdater.playerStatus != 'stopped') {
 										xbmc.periodicUpdater.playerStatus = 'stopped';
 										xbmc.periodicUpdater.firePlayerStatusChanged('stopped');
 									}
 
-								} else if (currentPlayer.paused && xbmc.periodicUpdater.playerStatus != 'paused') {
+								} else if (currentPlayer.speed == 0 && xbmc.periodicUpdater.playerStatus != 'paused') {
 									xbmc.periodicUpdater.playerStatus = 'paused';
 									xbmc.periodicUpdater.firePlayerStatusChanged('paused');
 
-								} else if (!currentPlayer.paused && xbmc.periodicUpdater.playerStatus != 'playing') {
+								} else if (currentPlayer.speed == 1 && xbmc.periodicUpdater.playerStatus != 'playing') {
 									xbmc.periodicUpdater.playerStatus = 'playing';
 									xbmc.periodicUpdater.firePlayerStatusChanged('playing');
 								}
 
-								// has current file changed?
+							},
+
+							null, null, false // not async
+						);
+					}
+						// Get current item
+					if (activePlayer != 'none') {
+						var request = '';
+
+						if (activePlayer == 'audio') {
+							request = '{"jsonrpc": "2.0", "method": "Player.GetItem", "params": { "properties": ["title", "album", "artist", "duration", "thumbnail", "file"], "playerid": 0 }, "id": 1}';
+							//requeststate = '{"jsonrpc":"2.0","id":2,"method":"Player.GetProperties","params":{ "playerid":0,"properties":["playlistid","position","percentage","totaltime","time","type","speed"] } }'
+
+						} else if (activePlayer == 'video') {
+							request = '{"jsonrpc": "2.0", "method": "Player.GetItem", "params": { "properties": ["title", "season", "episode", "duration", "showtitle", "thumbnail", "file"], "playerid": 1 }, "id": 1}';
+							//requeststate = '{"jsonrpc":"2.0","id":4,"method":"Player.GetProperties","params":{ "playerid":1,"properties":["playlistid","position","percentage","totaltime","time","type","speed"] } }'
+						}
+					
+						// Current file changed?
+						xbmc.sendCommand(
+							request,
+
+							function (response) {
+								var currentItem = response.result.item;
 								if (xbmc.periodicUpdater.currentlyPlayingFile != currentItem.file) {
 									xbmc.periodicUpdater.currentlyPlayingFile = currentItem.file;
 									$.extend(currentItem, {
@@ -1464,10 +1477,24 @@ var xbmc = {};
 									});
 									xbmc.periodicUpdater.fireCurrentlyPlayingChanged(currentItem);
 								}
+							},
 
-								// current time
+							null, null, false // not async
+						);
+						
+						xbmc.sendCommand(
+							'{"jsonrpc": "2.0", "method": "Player.GetProperties", "params": { "properties": ["time", "totaltime"], "playerid": ' + activePlayerid + ' }, "id": 1}',
+							function (response) {
+								var currentTimes = response.result;
+								var curtime;
+								var curruntime;
+								curtime = (currentTimes.time.hours * 3600) + (currentTimes.time.minutes * 60) + currentTimes.time.seconds;
+								curruntime = (currentTimes.totaltime.hours * 3600) + (currentTimes.totaltime.minutes * 60) + currentTimes.totaltime.seconds;
+								curtimeFormat = xbmc.formatTime(curtime);
+								curruntimeFormat = xbmc.formatTime(curruntime);
+								time = curtimeFormat;
 								if (xbmc.periodicUpdater.progress != time) {
-									xbmc.periodicUpdater.fireProgressChanged({"time": time, total: currentItem.duration});
+									xbmc.periodicUpdater.fireProgressChanged({"time": time, total: curruntimeFormat});
 									xbmc.periodicUpdater.progress = time;
 								}
 							},
