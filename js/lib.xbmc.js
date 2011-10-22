@@ -1,4 +1,4 @@
-/* Mizaki
+/*
  *  AWX - Ajax based Webinterface for XBMC
  *  Copyright (C) 2010  MKay
  *
@@ -1405,23 +1405,15 @@ var xbmc = {};
 						this.firePlayerStatusChanged('stopped');
 					}
 
-					// shuffle status changed?
-					if (this.shuffleStatus != shuffle) {
-						this.shuffleStatus = shuffle;
-						this.firePlayerStatusChanged(shuffle? 'shuffleOn': 'shuffleOff');
-					}
-
-					// is playing state
+					// playing state
 					if (activePlayer != 'none') {
 						var request = '';
 
 						if (activePlayer == 'audio') {
-							//request = '{"jsonrpc": "2.0", "method": "Playlist.GetItems", "params": { "properties": ["title", "album", "artist", "duration"], "playlistid": 0 }, "id": 1}';
-							request = '{"jsonrpc":"2.0","id":2,"method":"Player.GetProperties","params":{ "playerid":0,"properties":["speed"] } }'
+							request = '{"jsonrpc":"2.0","id":2,"method":"Player.GetProperties","params":{ "playerid":0,"properties":["speed", "shuffled", "repeat"] } }'
 
 						} else if (activePlayer == 'video') {
-							//request = '{"jsonrpc": "2.0", "method": "Playlist.GetItems", "params": { "properties": ["title", "season", "episode", "duration", "showtitle"], "playlistid": 1 }, "id": 1}';
-							request = '{"jsonrpc":"2.0","id":4,"method":"Player.GetProperties","params":{ "playerid":1,"properties":["speed"] } }'
+							request = '{"jsonrpc":"2.0","id":4,"method":"Player.GetProperties","params":{ "playerid":1,"properties":["speed", "shuffled", "repeat"] } }'
 						}
 
 						xbmc.sendCommand(
@@ -1429,7 +1421,7 @@ var xbmc = {};
 
 							function (response) {
 								var currentPlayer = response.result;
-
+								
 								if (currentPlayer.speed != 0 && currentPlayer.speed != 1 ) {
 									// not playing
 									if (xbmc.periodicUpdater.playerStatus != 'stopped') {
@@ -1445,6 +1437,15 @@ var xbmc = {};
 									xbmc.periodicUpdater.playerStatus = 'playing';
 									xbmc.periodicUpdater.firePlayerStatusChanged('playing');
 								}
+								
+								//shuffle status changed?
+								shuffle = currentPlayer.shuffled;
+								if (this.shuffleStatus != shuffle) {
+								xbmc.periodicUpdater.shuffleStatus = shuffle;
+								xbmc.periodicUpdater.firePlayerStatusChanged(shuffle? 'shuffleOn': 'shuffleOff');
+								}
+								
+								//TO DO repeat
 
 							},
 
