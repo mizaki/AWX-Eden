@@ -281,12 +281,12 @@ var awxUI = {};
 		 *****************************/
 		buildUI: function() {
 			$('body').append('<div id="preload">' +
-								'<img src="loading_thumb.gif" alt="Preload 1/8" />' +
-								'<img src="loading_thumbBanner.gif" alt="Preload 2/8" />' +
-								'<img src="loading_thumbPoster.gif" alt="Preload 3/8" />' +
-								'<img src="thumbBanner.png" alt="Preload 4/8" />' +
-								'<img src="thumbPoster.png" alt="Preload 5/8" />' +
-								'<img src="thumb.png" alt="Preload 6/8" />' +
+								'<img src="images/loading_thumb.gif" alt="Preload 1/8" />' +
+								'<img src="images/loading_thumbBanner.gif" alt="Preload 2/8" />' +
+								'<img src="images/loading_thumbPoster.gif" alt="Preload 3/8" />' +
+								'<img src="images/thumbBanner.png" alt="Preload 4/8" />' +
+								'<img src="images/thumbPoster.png" alt="Preload 5/8" />' +
+								'<img src="images/thumb.png" alt="Preload 6/8" />' +
 								'<img src="ui.light/images/messagelog.png" alt="Preload 7/8" />' +
 								'<img src="ui.light/images/loading.gif" alt="Preload 8/8" />' +
 							'</div>' +
