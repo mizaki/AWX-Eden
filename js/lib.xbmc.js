@@ -331,7 +331,7 @@ var xbmc = {};
 
 					function (response) {
 
-						if (response.result[0].type != '') {
+						if (response.result[0]) {
 							xbmc.sendCommand(
 								'{"jsonrpc": "2.0", "method": "Player.' + commands[settings.type] + '", "params": { "playerid": ' + response.result[0].playerid + ' }, "id": 1}',
 								settings.onSuccess,
