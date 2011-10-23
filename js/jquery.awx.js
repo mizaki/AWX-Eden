@@ -624,8 +624,7 @@
 
 			return false;
 		};
-
-
+		
 		this.each(function() {
 			var $itemList = $('<ul class="fileList"></ul>').appendTo($(this));
 			var runtime = 0;
@@ -634,7 +633,6 @@
 					var artist = (item.artist? item.artist : mkf.lang.get('label_not_available'));
 					var title = (item.title? item.title : mkf.lang.get('label_not_available'));
 					var label = (item.label? item.label : mkf.lang.get('label_not_available'));
-					//console.log(item);
 					if (playlist == 'Audio') {
 					var duration  = (item.duration? item.duration : mkf.lang.get('label_not_available'));
 					} else if (playlist == 'Video') {

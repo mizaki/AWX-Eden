@@ -1286,13 +1286,16 @@ var xbmc = {};
 			currentlyPlayingChangedListener: [],
 			playerStatusChangedListener: [],
 			progressChangedListener: [],
-
-			lastVolume: -1,
-			currentlyPlayingFile: null,
+			/*currentlyPlayingFile: null,
 			progress: '',
 			playerStatus: 'stopped',
-			shuffleStatus: false,
-
+			//shuffleStatus: false,
+			//if (typeof lastVolume === 'undefined')
+				//lastVolume: -1,
+			/*if (typeof lastVolume == 'undefined') {
+				lastVolume: -1;
+			},*/
+			
 			addVolumeChangedListener: function(fn) {
 				this.volumeChangedListener.push(fn);
 			},
@@ -1333,12 +1336,39 @@ var xbmc = {};
 
 			periodicStep: function() {
 
-				var curPlayData = {};
+				//var curPlayData = {};
 				var shuffle = false;
 				var time = '';
 				var file = '';
 				var volume = 0;
-
+				
+				//Stop changed status firering by only setting vars once!
+				if (typeof xbmc.periodicUpdater.lastVolume === 'undefined') {
+					$.extend(xbmc.periodicUpdater, {
+						lastVolume: -1,
+					});
+				}
+				if (typeof xbmc.periodicUpdater.shuffleStatus === 'undefined') {
+					$.extend(xbmc.periodicUpdater, {
+						shuffleStatus: false,
+					});
+				}
+				if (typeof xbmc.periodicUpdater.currentlyPlayingFile === 'undefined') {
+					$.extend(xbmc.periodicUpdater, {
+						currentlyPlayingFile: null,
+					});
+				}				
+				if (typeof xbmc.periodicUpdater.progress === 'undefined') {
+					$.extend(xbmc.periodicUpdater, {
+						progress: '',
+					});
+				}
+				if (typeof xbmc.periodicUpdater.playerStatus === 'undefined') {
+					$.extend(xbmc.periodicUpdater, {
+						playerStatus: 'stopped',
+					});
+				}
+				
 				// ---------------------------------
 				// ---      Volume Changes       ---
 				// ---------------------------------
@@ -1378,31 +1408,28 @@ var xbmc = {};
 					);
 
 					// has volume changed?
-					xbmc.sendCommand(
-						'{"jsonrpc": "2.0", "method": "Application.GetProperties", "params": { "properties": [ "volume", "muted" ] }, "id": 1}',
+					if (activePlayer != 'none') {
+						xbmc.sendCommand(
+							'{"jsonrpc": "2.0", "method": "Application.GetProperties", "params": { "properties": [ "volume", "muted" ] }, "id": 1}',
 
-						function (response) {
-							var volume = response.result.volume;
-							if (volume != xbmc.periodicUpdater.lastVolume) {
-								$.each(xbmc.periodicUpdater.volumeChangedListener, function(i, listener)  {
+							function (response) {
+								var volume = response.result.volume;
+								if (volume != xbmc.periodicUpdater.lastVolume) {
+									xbmc.periodicUpdater.lastVolume = volume;
+									$.each(xbmc.periodicUpdater.volumeChangedListener, function(i, listener)  {
+									listener(volume);
+								});
+								}
+							},
+
+							null, false // not async
+						);
+					
+						/*if (volume != xbmc.periodicUpdater.lastVolume) {
+							$.each(xbmc.periodicUpdater.volumeChangedListener, function(i, listener)  {
 								listener(volume);
 							});
-							}
-						},
-
-						null, false // not async
-					);
-					if (volume != xbmc.periodicUpdater.lastVolume) {
-						$.each(xbmc.periodicUpdater.volumeChangedListener, function(i, listener)  {
-							listener(volume);
-						});
-					}
-
-					if (activePlayer == 'none' &&
-						this.playerStatus != 'stopped') {
-						
-						this.playerStatus = 'stopped';
-						this.firePlayerStatusChanged('stopped');
+						}*/
 					}
 
 					// playing state
@@ -1440,7 +1467,7 @@ var xbmc = {};
 								
 								//shuffle status changed?
 								shuffle = currentPlayer.shuffled;
-								if (this.shuffleStatus != shuffle) {
+								if (xbmc.periodicUpdater.shuffleStatus != shuffle) {
 								xbmc.periodicUpdater.shuffleStatus = shuffle;
 								xbmc.periodicUpdater.firePlayerStatusChanged(shuffle? 'shuffleOn': 'shuffleOff');
 								}
