@@ -719,12 +719,18 @@
 
 			if (movieResult.limits.total > 0) {
 				$.each(movieResult.movies, function(i, movie) {
-
+					
+					var watched = false;
+			
 					// if movie has no id (e.g. movie sets), ignore it
 					if (typeof movie.movieid === 'undefined') {
 						return;
 					}
-
+					
+					if (movie.playcount > 0) {
+						watched = true;
+					}
+					
 					var thumb = (movie.thumbnail? xbmc.getThumbUrl(movie.thumbnail) : 'images/thumb' + xbmc.getMovieThumbType() + '.png');
 					var $movie = $(
 						'<div class="movie'+movie.movieid+' thumbWrapper thumb' + xbmc.getMovieThumbType() + 'Wrapper">' +
@@ -736,7 +742,7 @@
 								'<img src="images/loading_thumb' + xbmc.getMovieThumbType() + '.gif" alt="' + movie.label + '" class="thumb thumb' + xbmc.getMovieThumbType() + '" original="' + thumb + '" />':
 								'<img src="' + thumb + '" alt="' + movie.label + '" class="thumb thumb' + xbmc.getMovieThumbType() + '" />'
 							) +
-							'<div class="movieName">' + movie.label + '</div>' +
+							'<div class="movieName">' + movie.label + (watched? '<img src="images/OverlayWatched_Small.png" />' : '') + '</div>' +
 							'<div class="findKeywords">' + movie.label.toLowerCase() + '</div>' +
 						'</div>').appendTo($movieContainer);
 					$movie.find('.play').bind('click', {idMovie: movie.movieid, strMovie: movie.label}, onMoviePlayClick);
@@ -849,8 +855,15 @@
 		this.each(function() {
 			var $tvshowContainer = $(this);
 
+
 			if (tvShowResult.limits.total > 0) {
 				$.each(tvShowResult.tvshows, function(i, tvshow) {
+					var watched = false;
+					
+					if (tvshow.playcount > 0) {
+						watched = true;
+					}
+					
 					var thumb = (tvshow.thumbnail? xbmc.getThumbUrl(tvshow.thumbnail) : 'images/thumb' + xbmc.getTvShowThumbType() + '.png');
 					var $tvshow = $('<div class="tvshow'+tvshow.tvshowid+' thumbWrapper thumb' + xbmc.getTvShowThumbType() + 'Wrapper">' +
 							'<div class="linkWrapper">' + 
@@ -861,7 +874,7 @@
 								'<img src="images/loading_thumb' + xbmc.getTvShowThumbType() + '.gif" alt="' + tvshow.label + '" class="thumb thumb' + xbmc.getTvShowThumbType() + '" original="' + thumb + '" />':
 								'<img src="' + thumb + '" alt="' + tvshow.label + '" class="thumb thumb' + xbmc.getTvShowThumbType() + '" />'
 							) +
-							'<div class="tvshowName">' + tvshow.label + '</div>' +
+							'<div class="tvshowName">' + tvshow.label + (watched? '<img src="images/OverlayWatched_Small.png" />' : '') + '</div>' +
 							'<div class="findKeywords">' + tvshow.label.toLowerCase() + '</div>' +
 						'</div>')
 						.appendTo($tvshowContainer);
@@ -939,7 +952,13 @@
 
 			if (seasonsResult.limits.total > 0) {
 				$.each(seasonsResult.seasons, function(i, season)  {
-					var $season = $('<li' + (i%2==0? ' class="even"': '') + '><div class="linkWrapper"> <a href="" class="season' + i + '">' + season.label + '</a> </div></li>')
+					var watched = false;
+					
+					if (season.playcount > 0) {
+						watched = true;
+					}
+					
+					var $season = $('<li' + (i%2==0? ' class="even"': '') + '><table><td width="500"><div class="linkWrapper"> <a href="" class="season' + i + '">' + season.label + '</a> </div></td><td>' + (watched? '<img src="images/OverlayWatched_Small.png" />' : '') + '</td></tr></table></li>')
 						.appendTo($seasonsList);
 					$season.find('a').bind(
 						'click',
@@ -1001,7 +1020,13 @@
 
 			if (episodesResult.limits.total > 0) {	
 				$.each(episodesResult.episodes, function(i, episode)  {
-					var $episode = $('<li' + (i%2==0? ' class="even"': '') + '><div class="folderLinkWrapper episode' + episode.episodeid + '"> <a href="" class="button playlist" title="' + mkf.lang.get('btn_enqueue') + '"><span class="miniIcon enqueue" /></a> <a href="" class="episode play">' + episode.episode + '. ' + episode.label + '</a></div></li>').appendTo($episodeList);
+					var watched = false;
+					
+					if (episode.playcount > 0) {
+						watched = true;
+					}
+					
+					var $episode = $('<li' + (i%2==0? ' class="even"': '') + '><div class="folderLinkWrapper episode' + episode.episodeid + '"> <a href="" class="button playlist" title="' + mkf.lang.get('btn_enqueue') + '"><span class="miniIcon enqueue" /></a><a href="" class="episode play"><table><tr><td width="500">' + episode.episode + '. ' + episode.label + '</td><td>' + (watched? '<img src="images/OverlayWatched_Small.png" />' : '') + '</td></tr></table></a></div></li>').appendTo($episodeList);
 
 					$episode.find('.play').bind('click', {idEpisode: episode.episodeid}, onEpisodePlayClick);
 					$episode.find('.playlist').bind('click', {idEpisode: episode.episodeid}, onAddEpisodeToPlaylistClick);
